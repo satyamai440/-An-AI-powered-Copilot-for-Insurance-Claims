@@ -106,3 +106,35 @@ class DraftUpdateRequest(BaseModel):
 class GenerateDraftResponse(BaseModel):
     ticket_id: int
     draft: DraftResponse
+
+
+# GROUP 4: RAG KNOWLEDGE BASE - DATA WIPEOUT CHECKPOINT
+
+# This model controls if we want to delete old policy files from ChromaDB 
+# before uploading and indexing the new document checklist folders.
+
+class KnowledgeIngestRequest(BaseModel):
+    clear_existing: bool = False
+
+# This model acts as a receipt. After uploading new policy PDFs into 
+# ChromaDB, it counts and shows how many files and chunks were indexed.
+
+class KnowledgeIngestResponse(BaseModel):
+    files_indexed: int
+    chunks_indexed: int
+    collection_count: int
+
+# LANGMEM STORAGE - CUSTOMER LONG-TERM MEMORY CONTRACT
+
+class CustomerMemoriesResponse(BaseModel):
+    customer_id: int
+    customer_email: EmailStr
+    memories: list[dict[str, Any]]
+
+# CUSTOMER MEMORY SEARCH RESULT
+
+class CustomerMemorySearchResponse(BaseModel):
+    customer_id: int
+    customer_email: EmailStr
+    query: str
+    results: list[dict[str, Any]]
