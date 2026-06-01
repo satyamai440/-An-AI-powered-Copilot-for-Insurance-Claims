@@ -4,7 +4,7 @@ from pydantic import BaseModel,EmailStr,Field
 
 ## Group 1: External Client & Claim Intake Layer
 
-# Ticket Creation Request — Input Validation Schema
+ # Ticket Creation Request — Input Validation Schema
 class TicketCreateRequest(BaseModel):
     customer_email: EmailStr
     customer_name: str | None = None 
@@ -14,7 +14,7 @@ class TicketCreateRequest(BaseModel):
     priority: Literal["low", "medium", "high", "urgent"] = "medium"
     auto_generate: bool = True
 
-# Ticket Response Schema — What the API Sends Back After a Ticket is Created:
+ # Ticket Response Schema — What the API Sends Back After a Ticket is Created:
 
 class TicketResponse(BaseModel):
     id: int
@@ -32,8 +32,8 @@ class TicketResponse(BaseModel):
 
 # GROUP 2: Behind-the-Scenes AI Activity Tracking
 
-# Tracks what the AI agent actually did while generating a response —
-# how many times it checked memory, searched the knowledge base, and called external tools.
+ # Tracks what the AI agent actually did while generating a response —
+ # how many times it checked memory, searched the knowledge base, and called external tools.
 
 class DraftSignals(BaseModel):
     memory_hit_count: int = 0
@@ -43,16 +43,16 @@ class DraftSignals(BaseModel):
     knowledge_sources: list[str] = Field(default_factory=list)
 
 
-# This model structures the high-level semantic summaries (memory, RAG, 
-# and tool logs) displayed to the human agent for full audit transparency.
+ # This model structures the high-level semantic summaries (memory, RAG, 
+ # and tool logs) displayed to the human agent for full audit transparency.
 
 class DraftHighlights(BaseModel):
     memory: list[str] = Field(default_factory=list)
     knowledge: list[str] = Field(default_factory=list)
     tools: list[str] = Field(default_factory=list)
 
-# This model captures and validates the dynamic input arguments, status, 
-# and schema outputs of autonomous external tool invocations by the AI.
+ # This model captures and validates the dynamic input arguments, status, 
+ # and schema outputs of autonomous external tool invocations by the AI.
 
 class DraftToolCall(BaseModel):
     tool_name: str
@@ -64,3 +64,45 @@ class DraftToolCall(BaseModel):
     output_text: str
 
 
+# GROUP 3: CORE AGENT ORCHESTRATION LAYER - CONTEXT
+
+ # This model acts as the primary unified state container mapping all telemetry,
+ # metadata logs, database entities, and token traces into a structured pipeline.
+
+class StructuredDraftContext(BaseModel):
+    version: int = 2
+    ticket: dict[str, Any] | None = None
+    customer: dict[str, Any] | None = None
+    signals: DraftSignals | dict[str, Any] | None = None
+    highlights: DraftHighlights | dict[str, Any] | None = None
+    memory_hits: list[dict[str, Any]] = Field(default_factory=list)
+    knowledge_hits: list[dict[str, Any]] = Field(default_factory=list)
+    tool_calls: list[DraftToolCall | dict[str, Any]] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+
+
+# This model sets the final layout for what the AI draft response sends back.
+# It delivers the written email text and packs all the background logs 
+# together so the frontend screen can display everything to the agent.
+
+class DraftResponse(BaseModel):
+    id: int
+    ticket_id: int
+    content: str
+    context_used: StructuredDraftContext | dict[str, Any] | None = None
+    status: str
+    created_at: str 
+
+# This model handles changes made by a human supervisor on the dashboard.
+# It lets the human edit the email text or change the approval status.
+
+class DraftUpdateRequest(BaseModel):
+    content: str | None = None
+    status: Literal["pending", "accepted", "discarded"] | None = None
+
+# This model acts like a final packaging box. It bundles the ticket ID 
+# and the actual AI-written response together to send it to the frontend.
+
+class GenerateDraftResponse(BaseModel):
+    ticket_id: int
+    draft: DraftResponse
