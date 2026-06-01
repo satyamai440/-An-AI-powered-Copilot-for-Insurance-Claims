@@ -137,4 +137,5 @@ class CustomerMemorySearchResponse(BaseModel):
     customer_id: int
     customer_email: EmailStr
     query: str
-    results: list[dict[str, Any]]
+    results: list[dict[str, Any]] 
+
